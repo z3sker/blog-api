@@ -1,0 +1,6 @@
+{% load i18n %}
+{% blocktrans with first_name=first_name %}Hi {{ first_name }},{% endblocktrans %}
+
+{% blocktrans %}Your account has been created successfully.{% endblocktrans %}
+
+{% blocktrans %}You can now sign in and start using the API.{% endblocktrans %}

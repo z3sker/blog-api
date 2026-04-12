@@ -6,6 +6,8 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from django.utils.text import slugify
+from django.utils import formats, timezone
+from django.utils.translation import gettext_lazy as _
 
 from .models import Category, Comment, Post, PostStatus, Tag
 
@@ -16,6 +18,8 @@ MAX_SLUG_LENGTH = 50
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(read_only=True)
+
     class Meta:
         model = Category
         fields = ("id", "name", "slug")
@@ -31,6 +35,8 @@ class PostReadSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     category = CategorySerializer(allow_null=True)
     tags = TagSerializer(many=True)
+    created_at_display = serializers.SerializerMethodField()
+    updated_at_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -45,6 +51,8 @@ class PostReadSerializer(serializers.ModelSerializer):
             "status",
             "created_at",
             "updated_at",
+            "created_at_display",
+            "updated_at_display",
         )
 
     def get_author(self, obj: Post) -> dict:
@@ -54,6 +62,14 @@ class PostReadSerializer(serializers.ModelSerializer):
             "first_name": obj.author.first_name,
             "last_name": obj.author.last_name,
         }
+
+    def get_created_at_display(self, obj: Post) -> str:
+        dt = timezone.localtime(obj.created_at)
+        return formats.date_format(dt, format="DATETIME_FORMAT", use_l10n=True)
+
+    def get_updated_at_display(self, obj: Post) -> str:
+        dt = timezone.localtime(obj.updated_at)
+        return formats.date_format(dt, format="DATETIME_FORMAT", use_l10n=True)
 
 
 class PostWriteSerializer(serializers.ModelSerializer):
@@ -82,7 +98,7 @@ class PostWriteSerializer(serializers.ModelSerializer):
         title = str(self.initial_data.get("title", ""))
         base_slug = slugify(title)[:MAX_SLUG_LENGTH]
         if not base_slug:
-            raise serializers.ValidationError("Slug is required.")
+            raise serializers.ValidationError(_("Slug is required."))
         return base_slug
 
     def _unique_slug(self, base_slug: str) -> str:

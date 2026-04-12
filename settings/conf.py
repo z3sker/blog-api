@@ -17,6 +17,7 @@ ALLOWED_HOSTS: list[str] = CONFIG(
 )
 
 REDIS_URL: str = CONFIG("BLOG_REDIS_URL", default="redis://127.0.0.1:6379/1")
+DEFAULT_FROM_EMAIL: str = CONFIG("BLOG_DEFAULT_FROM_EMAIL", default="no-reply@example.com")
 
 DB_NAME: str = CONFIG("BLOG_DB_NAME", default="blog")
 DB_USER: str = CONFIG("BLOG_DB_USER", default="postgres")
