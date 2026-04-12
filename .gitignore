@@ -11,3 +11,4 @@ logs/
 media/
 
 *.log
+*.mo

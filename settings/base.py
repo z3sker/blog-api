@@ -5,6 +5,7 @@ from datetime import timedelta
 from .conf import (
     ALLOWED_HOSTS as CONF_ALLOWED_HOSTS,
     BASE_DIR,
+    DEFAULT_FROM_EMAIL as CONF_DEFAULT_FROM_EMAIL,
     REDIS_URL as CONF_REDIS_URL,
     SECRET_KEY as CONF_SECRET_KEY,
 )
@@ -14,6 +15,7 @@ DEBUG = False
 SECRET_KEY = CONF_SECRET_KEY
 ALLOWED_HOSTS = CONF_ALLOWED_HOSTS
 REDIS_URL = CONF_REDIS_URL
+DEFAULT_FROM_EMAIL = CONF_DEFAULT_FROM_EMAIL
 
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -27,7 +29,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "drf_spectacular",
     "django_ratelimit",
+    "apps.core",
     "apps.users",
     "apps.blog",
 ]
@@ -40,6 +44,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.core.middleware.LanguageTimezoneMiddleware",
 ]
 
 ROOT_URLCONF = "settings.urls"
@@ -47,7 +52,7 @@ ROOT_URLCONF = "settings.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [str(BASE_DIR / "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -77,12 +82,14 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Asia/Almaty"
+TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -100,6 +107,7 @@ CACHES = {
 }
 
 REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -107,6 +115,21 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Blog API",
+    "DESCRIPTION": "Blog API with JWT auth, localization, caching, and async stats.",
+    "VERSION": "2.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
+
+LANGUAGE_CODE = "en"
+LANGUAGES = [
+    ("en", "English"),
+    ("ru", "Russian"),
+    ("kk", "Kazakh"),
+]
+LOCALE_PATHS = [str(BASE_DIR / "locale")]
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
@@ -148,6 +171,11 @@ LOGGING = {
         },
     },
     "loggers": {
+        "core": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
         "users": {
             "handlers": ["console", "file"],
             "level": "DEBUG",

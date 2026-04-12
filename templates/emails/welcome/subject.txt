@@ -1,0 +1,1 @@
+{% load i18n %}{% blocktrans %}Welcome to Blog API{% endblocktrans %}
