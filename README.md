@@ -6,13 +6,6 @@
 
 ## Setup (Local)
 
-1. Create `settings/.env` (see `settings/.env.example`)
-2. Install deps: `pip install -r requirements/dev.txt`
-3. Run migrations: `python manage.py migrate`
-4. Start server: `python manage.py runserver`
-
-Redis is required for caching, rate limiting, and pub/sub.
-
 ## API
 
 Auth:
