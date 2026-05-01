@@ -1,94 +1,117 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$PROJECT_DIR"
+CURRENT_STEP="startup"
+trap 'echo "Step failed: ${CURRENT_STEP}" >&2' ERR
 
-ENV_FILE="settings/.env"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ROOT_DIR}/settings/.env"
+VENV_DIR="${ROOT_DIR}/.venv"
+PYTHON_BIN="${VENV_DIR}/bin/python"
+PIP_BIN="${VENV_DIR}/bin/pip"
 
-required_env_vars=(
+REQUIRED_ENV_VARS=(
   "BLOG_ENV_ID"
   "BLOG_SECRET_KEY"
   "BLOG_ALLOWED_HOSTS"
   "BLOG_REDIS_URL"
-  "BLOG_DEFAULT_FROM_EMAIL"
+  "BLOG_CELERY_BROKER_URL"
+  "BLOG_FLOWER_USER"
+  "BLOG_FLOWER_PASSWORD"
+  "BLOG_SEED_DB"
 )
 
-step() {
-  echo "==> $1"
-}
+SUPERUSER_EMAIL="admin@example.com"
+SUPERUSER_PASSWORD="Adminpass123!"
+SUPERUSER_FIRST_NAME="Admin"
+SUPERUSER_LAST_NAME="User"
 
-fail() {
-  echo "ERROR: $1" >&2
+cd "${ROOT_DIR}"
+
+CURRENT_STEP="checking environment variables"
+if [[ ! -f "${ENV_FILE}" ]]; then
+  echo "Missing variable: settings/.env" >&2
   exit 1
-}
-
-run_step() {
-  local name="$1"
-  shift
-  step "$name"
-  "$@" || fail "$name failed"
-}
-
-step "Validate env"
-[ -f "$ENV_FILE" ] || fail "Missing env file: $ENV_FILE"
-set -a
-# shellcheck disable=SC1090
-source "$ENV_FILE"
-set +a
-missing=0
-for v in "${required_env_vars[@]}"; do
-  if [ -z "${!v:-}" ]; then
-    echo "Missing or empty: $v"
-    missing=1
-  fi
-done
-[ "$missing" -eq 0 ] || exit 1
-
-PYTHON_BIN="${PYTHON_BIN:-python3}"
-
-if [ ! -d ".venv" ]; then
-  run_step "Create venv" "$PYTHON_BIN" -m venv .venv
 fi
 
-run_step "Install deps" bash -c '. .venv/bin/activate && pip install -r requirements/dev.txt'
-run_step "Migrate" bash -c '. .venv/bin/activate && python manage.py migrate'
-run_step "Collect static" bash -c '. .venv/bin/activate && python manage.py collectstatic --noinput'
-run_step "Compile translations" bash -c '. .venv/bin/activate && python manage.py compilemessages'
+for variable in "${REQUIRED_ENV_VARS[@]}"; do
+  value="$(grep -E "^${variable}=" "${ENV_FILE}" | tail -n 1 | cut -d '=' -f 2- | tr -d '"' | tr -d "'" || true)"
+  if [[ -z "${value// }" ]]; then
+    echo "Missing variable: ${variable}" >&2
+    exit 1
+  fi
+done
 
-ADMIN_EMAIL="admin@example.com"
-ADMIN_PASSWORD="admin12345"
+CURRENT_STEP="creating virtual environment"
+if [[ ! -x "${PYTHON_BIN}" ]]; then
+  if command -v python3.13 >/dev/null 2>&1; then
+    python3.13 -m venv "${VENV_DIR}"
+  else
+    python3 -m venv "${VENV_DIR}"
+  fi
+fi
 
-run_step "Create superuser" bash -c '
-  . .venv/bin/activate
-  python manage.py shell -c "
+CURRENT_STEP="installing dependencies"
+"${PIP_BIN}" install --upgrade pip
+"${PIP_BIN}" install -r requirements/dev.txt
+
+CURRENT_STEP="running migrations"
+"${PYTHON_BIN}" manage.py migrate
+
+CURRENT_STEP="collecting static files"
+"${PYTHON_BIN}" manage.py collectstatic --noinput
+
+CURRENT_STEP="compiling translation files"
+"${PYTHON_BIN}" manage.py compilemessages
+
+CURRENT_STEP="creating superuser"
+"${PYTHON_BIN}" manage.py shell <<PY
 from django.contrib.auth import get_user_model
+
 User = get_user_model()
-email = \"'"$ADMIN_EMAIL"'\".lower()
-if not User.objects.filter(email=email).exists():
-    User.objects.create_superuser(email=email, password=\"'"$ADMIN_PASSWORD"'\", first_name=\"Admin\", last_name=\"User\", language=\"en\", timezone=\"UTC\")
-print(\"superuser_ok\")
-"
-'
+user, created = User.objects.get_or_create(
+    email="${SUPERUSER_EMAIL}",
+    defaults={
+        "first_name": "${SUPERUSER_FIRST_NAME}",
+        "last_name": "${SUPERUSER_LAST_NAME}",
+        "is_staff": True,
+        "is_superuser": True,
+        "language": "en",
+        "timezone": "UTC",
+    },
+)
+if created:
+    user.set_password("${SUPERUSER_PASSWORD}")
+    user.save()
+else:
+    changed = False
+    if not user.is_staff:
+        user.is_staff = True
+        changed = True
+    if not user.is_superuser:
+        user.is_superuser = True
+        changed = True
+    if changed:
+        user.save(update_fields=["is_staff", "is_superuser"])
+print("Superuser is ready.")
+PY
 
-run_step "Seed data" bash -c '. .venv/bin/activate && python manage.py seed_data'
+CURRENT_STEP="seeding database"
+"${PYTHON_BIN}" manage.py seed
 
-step "Start server"
-. .venv/bin/activate
-python manage.py runserver 0.0.0.0:8000 &
-server_pid=$!
-sleep 1
+cat <<SUMMARY
 
-echo ""
-echo "API:        http://127.0.0.1:8000/api/"
-echo "Swagger UI: http://127.0.0.1:8000/api/docs/"
-echo "ReDoc:      http://127.0.0.1:8000/api/redoc/"
-echo "Schema:     http://127.0.0.1:8000/api/schema/"
-echo "Admin:      http://127.0.0.1:8000/admin/"
-echo ""
-echo "Superuser:"
-echo "  email:    $ADMIN_EMAIL"
-echo "  password: $ADMIN_PASSWORD"
-echo ""
+Project is ready.
+API:        http://127.0.0.1:8000/api/
+Swagger:    http://127.0.0.1:8000/api/docs/
+ReDoc:      http://127.0.0.1:8000/api/redoc/
+Admin:      http://127.0.0.1:8000/admin/
 
-wait "$server_pid"
+Superuser:
+  email:    ${SUPERUSER_EMAIL}
+  password: ${SUPERUSER_PASSWORD}
+
+SUMMARY
+
+CURRENT_STEP="starting development server"
+exec "${PYTHON_BIN}" manage.py runserver 127.0.0.1:8000

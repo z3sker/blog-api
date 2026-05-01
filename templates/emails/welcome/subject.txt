@@ -1,1 +1,1 @@
-{% load i18n %}{% blocktrans %}Welcome to Blog API{% endblocktrans %}
+{% load i18n %}{% trans "Welcome to Blog API" %}

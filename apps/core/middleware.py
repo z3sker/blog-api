@@ -1,65 +1,63 @@
 from __future__ import annotations
 
-import logging
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone, translation
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .constants import QUERY_PARAM_LANG, SUPPORTED_LANGUAGES
-
-logger = logging.getLogger("core")
+from apps.core.i18n import DEFAULT_LANGUAGE, DEFAULT_TIMEZONE, language_from_header, normalize_language
 
 
-class LanguageTimezoneMiddleware:
-    def __init__(self, get_response):
+LANG_QUERY_PARAM = "lang"
+
+
+class UserLocaleMiddleware:
+    def __init__(self, get_response: object) -> None:
         self.get_response = get_response
+        self.jwt_authentication = JWTAuthentication()
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        language = self._resolve_language(request)
+        user = self.get_authenticated_user(request)
+        language = self.resolve_language(request, user)
+        user_timezone = getattr(user, "timezone", DEFAULT_TIMEZONE) if user else DEFAULT_TIMEZONE
+
         translation.activate(language)
         request.LANGUAGE_CODE = language
+        request.active_language = language
 
-        self._activate_timezone(request)
+        try:
+            timezone.activate(ZoneInfo(user_timezone))
+        except ZoneInfoNotFoundError:
+            timezone.activate(ZoneInfo(DEFAULT_TIMEZONE))
+
         response = self.get_response(request)
-        response.headers["Content-Language"] = language
         translation.deactivate()
         timezone.deactivate()
         return response
 
-    def _resolve_language(self, request: HttpRequest) -> str:
-        user = getattr(request, "user", None)
-        if user is not None and getattr(user, "is_authenticated", False):
-            user_lang = getattr(user, "language", None)
-            if user_lang in SUPPORTED_LANGUAGES:
-                return user_lang
-
-        query_lang = request.GET.get(QUERY_PARAM_LANG)
-        if query_lang in SUPPORTED_LANGUAGES:
-            return query_lang
-
-        header_lang = translation.get_language_from_request(request, check_path=False)
-        if header_lang:
-            normalized = header_lang.split("-")[0]
-            if normalized in SUPPORTED_LANGUAGES:
-                return normalized
-
-        return settings.LANGUAGE_CODE
-
-    def _activate_timezone(self, request: HttpRequest) -> None:
-        user = getattr(request, "user", None)
-        if user is None or not getattr(user, "is_authenticated", False):
-            timezone.activate(ZoneInfo("UTC"))
-            return
-
-        tz = getattr(user, "timezone", None)
-        if not tz:
-            timezone.activate(ZoneInfo("UTC"))
-            return
-
+    def get_authenticated_user(self, request: HttpRequest) -> object | None:
         try:
-            timezone.activate(ZoneInfo(tz))
+            authenticated = self.jwt_authentication.authenticate(request)
         except Exception:
-            logger.warning("Invalid timezone stored for user_id=%s", getattr(user, "id", None))
-            timezone.activate(ZoneInfo("UTC"))
+            return None
+        if not authenticated:
+            return None
+        user, _token = authenticated
+        request.user = user
+        return user
+
+    def resolve_language(self, request: HttpRequest, user: object | None) -> str:
+        saved_language = getattr(user, "language", None)
+        if saved_language:
+            return normalize_language(saved_language)
+
+        query_language = request.GET.get(LANG_QUERY_PARAM)
+        if query_language:
+            return normalize_language(query_language)
+
+        header_language = request.META.get("HTTP_ACCEPT_LANGUAGE")
+        if header_language:
+            return language_from_header(header_language)
+
+        return DEFAULT_LANGUAGE

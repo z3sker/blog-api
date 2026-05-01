@@ -1,24 +1,16 @@
 from __future__ import annotations
 
-from datetime import timedelta
+import os
 
-from .conf import (
-    ALLOWED_HOSTS as CONF_ALLOWED_HOSTS,
-    BASE_DIR,
-    DEFAULT_FROM_EMAIL as CONF_DEFAULT_FROM_EMAIL,
-    REDIS_URL as CONF_REDIS_URL,
-    SECRET_KEY as CONF_SECRET_KEY,
-)
+from settings.conf import ALLOWED_HOSTS as CONF_ALLOWED_HOSTS
+from settings.conf import BASE_DIR, CELERY_BROKER_URL as CONF_CELERY_BROKER_URL
+from settings.conf import REDIS_URL
+from settings.conf import SECRET_KEY as CONF_SECRET_KEY
+
 
 DEBUG = False
-
 SECRET_KEY = CONF_SECRET_KEY
 ALLOWED_HOSTS = CONF_ALLOWED_HOSTS
-REDIS_URL = CONF_REDIS_URL
-DEFAULT_FROM_EMAIL = CONF_DEFAULT_FROM_EMAIL
-
-LOGS_DIR = BASE_DIR / "logs"
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -26,14 +18,16 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "daphne",
     "django.contrib.staticfiles",
+    "channels",
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
-    "django_ratelimit",
     "apps.core",
     "apps.users",
     "apps.blog",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -42,9 +36,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.core.middleware.UserLocaleMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "apps.core.middleware.LanguageTimezoneMiddleware",
 ]
 
 ROOT_URLCONF = "settings.urls"
@@ -52,100 +46,163 @@ ROOT_URLCONF = "settings.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [str(BASE_DIR / "templates")],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
-                "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
         },
-    }
+    },
 ]
 
 WSGI_APPLICATION = "settings.wsgi.application"
 ASGI_APPLICATION = "settings.asgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+AUTH_USER_MODEL = "users.User"
 
-AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
-]
-
+LANGUAGE_CODE = "en"
+LANGUAGES = (
+    ("en", "English"),
+    ("ru", "Russian"),
+    ("kk", "Kazakh"),
+)
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-AUTH_USER_MODEL = "users.User"
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
-    }
-}
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticatedOrReadOnly",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "PAGE_SIZE": 10,
 }
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Blog API",
-    "DESCRIPTION": "Blog API with JWT auth, localization, caching, and async stats.",
+    "DESCRIPTION": "Django REST API for a multilingual blog.",
     "VERSION": "2.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "APPEND_PATHS": {
+        "/api/stats/": {
+            "get": {
+                "operationId": "stats_retrieve",
+                "summary": "Get blog statistics",
+                "description": (
+                    "Returns public blog counts together with exchange rates and current Almaty time. "
+                    "Authentication is not required. The two external API calls run concurrently with asyncio.gather. "
+                    "No Redis cache is written and no database rows are changed."
+                ),
+                "tags": ["Stats"],
+                "responses": {
+                    "200": {
+                        "description": "Stats response.",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "blog": {"total_posts": 42, "total_comments": 137, "total_users": 15},
+                                    "exchange_rates": {"KZT": 450.23, "RUB": 89.10, "EUR": 0.92},
+                                    "current_time": "2024-03-15T18:30:00+05:00",
+                                }
+                            }
+                        },
+                    },
+                    "400": {"description": "Bad request."},
+                    "401": {"description": "Authentication credentials were invalid."},
+                    "403": {"description": "Permission denied."},
+                    "404": {"description": "Endpoint not found."},
+                },
+            }
+        },
+        "/api/posts/stream/": {
+            "get": {
+                "operationId": "posts_stream_retrieve",
+                "summary": "Stream published posts",
+                "description": (
+                    "Streams newly published posts as Server-Sent Events. Authentication is not required. "
+                    "The response uses text/event-stream and stays open while events are published."
+                ),
+                "tags": ["Posts"],
+                "responses": {
+                    "200": {
+                        "description": "SSE stream of published post events.",
+                        "content": {
+                            "text/event-stream": {
+                                "example": (
+                                    "data: {\"post_id\": 1, \"title\": \"First Post\", "
+                                    "\"slug\": \"first-post\", \"author\": {\"id\": 1, "
+                                    "\"email\": \"writer@example.com\"}, "
+                                    "\"published_at\": \"2026-05-02T10:00:00+05:00\"}\\n\\n"
+                                )
+                            }
+                        },
+                    },
+                    "400": {"description": "Bad request."},
+                    "401": {"description": "Authentication credentials were invalid."},
+                    "403": {"description": "Permission denied."},
+                    "404": {"description": "Endpoint not found."},
+                },
+            }
+        },
+    },
 }
 
-LANGUAGE_CODE = "en"
-LANGUAGES = [
-    ("en", "English"),
-    ("ru", "Russian"),
-    ("kk", "Kazakh"),
-]
-LOCALE_PATHS = [str(BASE_DIR / "locale")]
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": True,
+        },
+    },
 }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
+
+CELERY_BROKER_URL = CONF_CELERY_BROKER_URL
+CELERY_RESULT_BACKEND = CONF_CELERY_BROKER_URL
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+
+LOG_DIR = BASE_DIR / "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "filters": {
-        "require_debug_true": {"()": "django.utils.log.RequireDebugTrue"},
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
     },
     "formatters": {
-        "simple": {"format": "%(levelname)s %(message)s"},
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
         "verbose": {
-            "format": "%(asctime)s %(levelname)s %(name)s %(module)s %(message)s"
+            "format": "{asctime} {levelname} {name} {module} {message}",
+            "style": "{",
         },
     },
     "handlers": {
@@ -158,24 +215,21 @@ LOGGING = {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "WARNING",
             "formatter": "verbose",
-            "filename": str(LOGS_DIR / "app.log"),
+            "filename": LOG_DIR / "app.log",
             "maxBytes": 5 * 1024 * 1024,
             "backupCount": 3,
         },
         "debug_requests": {
-            "class": "logging.FileHandler",
-            "level": "INFO",
-            "formatter": "simple",
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "verbose",
+            "filename": LOG_DIR / "debug_requests.log",
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 3,
             "filters": ["require_debug_true"],
-            "filename": str(LOGS_DIR / "debug_requests.log"),
         },
     },
     "loggers": {
-        "core": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG",
-            "propagate": False,
-        },
         "users": {
             "handlers": ["console", "file"],
             "level": "DEBUG",
@@ -187,13 +241,8 @@ LOGGING = {
             "propagate": False,
         },
         "django.request": {
-            "handlers": ["file"],
+            "handlers": ["file", "debug_requests"],
             "level": "WARNING",
-            "propagate": False,
-        },
-        "django.server": {
-            "handlers": ["debug_requests"],
-            "level": "INFO",
             "propagate": False,
         },
     },

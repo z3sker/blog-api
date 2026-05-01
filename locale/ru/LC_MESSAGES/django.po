@@ -1,34 +1,58 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: blog-api\n"
-"POT-Creation-Date: 2026-04-12 12:35+0000\n"
-"PO-Revision-Date: 2026-04-12 12:35+0000\n"
+"Project-Id-Version: Blog API\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-02 00:00+0500\n"
+"PO-Revision-Date: 2026-05-02 00:00+0500\n"
+"Last-Translator: Blog API\n"
+"Language-Team: Russian\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
 
+msgid "A user with this email already exists."
+msgstr "Пользователь с этим email уже существует."
+
 msgid "Passwords do not match."
 msgstr "Пароли не совпадают."
 
-msgid "Invalid timezone. Use a valid IANA timezone name."
-msgstr "Некорректный часовой пояс. Используйте действительное IANA-имя."
+msgid "Enter a valid IANA timezone."
+msgstr "Введите корректный часовой пояс IANA."
+
+msgid "Language preference updated."
+msgstr "Язык профиля обновлен."
+
+msgid "Timezone preference updated."
+msgstr "Часовой пояс обновлен."
+
+msgid "Too many requests. Try again later."
+msgstr "Слишком много запросов. Попробуйте позже."
 
 msgid "Welcome to Blog API"
 msgstr "Добро пожаловать в Blog API"
 
-msgid "Hi %(first_name)s,"
-msgstr "Здравствуйте, %(first_name)s,"
+msgid ""
+"Hi %(first_name)s,\n"
+"\n"
+"Welcome to Blog API. Your account is ready.\n"
+msgstr ""
+"Здравствуйте, %(first_name)s!\n"
+"\n"
+"Добро пожаловать в Blog API. Ваш аккаунт готов.\n"
 
-msgid "Your account has been created successfully."
-msgstr "Ваш аккаунт успешно создан."
+msgid "English"
+msgstr "Английский"
 
-msgid "You can now sign in and start using the API."
-msgstr "Теперь вы можете войти и начать использовать API."
+msgid "Russian"
+msgstr "Русский"
 
-msgid "email"
-msgstr "электронная почта"
+msgid "Kazakh"
+msgstr "Казахский"
+
+msgid "email address"
+msgstr "адрес email"
 
 msgid "first name"
 msgstr "имя"
@@ -36,32 +60,20 @@ msgstr "имя"
 msgid "last name"
 msgstr "фамилия"
 
-msgid "language"
-msgstr "язык"
+msgid "preferred language"
+msgstr "предпочитаемый язык"
 
 msgid "timezone"
 msgstr "часовой пояс"
 
-msgid "active"
-msgstr "активен"
+msgid "category"
+msgstr "категория"
 
-msgid "staff status"
-msgstr "статус персонала"
+msgid "categories"
+msgstr "категории"
 
-msgid "date joined"
-msgstr "дата регистрации"
+msgid "Draft"
+msgstr "Черновик"
 
-msgid "avatar"
-msgstr "аватар"
-
-msgid "This field is required."
-msgstr "Это поле обязательно."
-
-msgid "Enter a valid email address."
-msgstr "Введите корректный адрес электронной почты."
-
-msgid "External services unavailable."
-msgstr "Внешние сервисы недоступны."
-
-msgid "Slug is required."
-msgstr "Slug обязателен."
+msgid "Published"
+msgstr "Опубликовано"
