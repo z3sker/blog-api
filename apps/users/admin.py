@@ -3,15 +3,16 @@ from __future__ import annotations
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from .models import User
+from apps.users.models import User
 
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
-    ordering = ("email",)
+    model = User
     list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
+    list_filter = ("is_staff", "is_active")
+    ordering = ("email",)
     search_fields = ("email", "first_name", "last_name")
-
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal info", {"fields": ("first_name", "last_name", "avatar")}),
@@ -23,7 +24,8 @@ class UserAdmin(DjangoUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "first_name", "last_name", "password1", "password2", "is_staff", "is_active"),
+                "fields": ("email", "first_name", "last_name", "password1", "password2"),
             },
         ),
     )
+

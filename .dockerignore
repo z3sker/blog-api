@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__/
+*.pyc
+*.sqlite3
+db.sqlite3
+logs/
+staticfiles/
+media/
+.ruff_cache/
+.DS_Store

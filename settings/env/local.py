@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from ..base import *  # noqa: F403
+from settings.base import *  # noqa: F403
+from settings.conf import SQLITE_PATH
+
 
 DEBUG = True
-
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",  # noqa: F405
-    }
+        "NAME": SQLITE_PATH,
+    },
 }

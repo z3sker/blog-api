@@ -1,26 +1,47 @@
 #!/usr/bin/env python
+"""Django's command-line utility for administrative tasks."""
+
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
 
-from decouple import AutoConfig
+
+ENV_LOCAL = "local"
+ENV_PROD = "prod"
+ENV_SETTINGS = {
+    ENV_LOCAL: "settings.env.local",
+    ENV_PROD: "settings.env.prod",
+}
+ENV_ID_KEY = "BLOG_ENV_ID"
 
 
-def main():
-    base_dir = Path(__file__).resolve().parent
-    config = AutoConfig(search_path=str(base_dir / "settings"))
-    env_id = config("BLOG_ENV_ID", default="local")
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"settings.env.{env_id}")
-    try:
-        from django.core.management import execute_from_command_line
-    except ImportError as exc:
-        raise ImportError(
-            "Couldn't import Django. Are you sure it's installed and "
-            "available on your PYTHONPATH environment variable? Did you "
-            "forget to activate a virtual environment?"
-        ) from exc
+def read_env_id() -> str:
+    env_file = Path(__file__).resolve().parent / "settings" / ".env"
+    if not env_file.exists():
+        return ENV_LOCAL
+
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        clean_line = line.strip()
+        if not clean_line or clean_line.startswith("#") or "=" not in clean_line:
+            continue
+        key, value = clean_line.split("=", 1)
+        if key.strip() == ENV_ID_KEY:
+            return value.strip().strip("'\"") or ENV_LOCAL
+    return ENV_LOCAL
+
+
+def main() -> None:
+    env_id = os.environ.get(ENV_ID_KEY, read_env_id())
+    settings_module = ENV_SETTINGS.get(env_id, ENV_SETTINGS[ENV_LOCAL])
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
+
+    from django.core.management import execute_from_command_line
+
     execute_from_command_line(sys.argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
+

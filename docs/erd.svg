@@ -1,62 +1,84 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="520" viewBox="0 0 1100 520">
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="760" viewBox="0 0 1160 760" role="img" aria-labelledby="title desc">
+  <title id="title">Blog API ERD</title>
+  <desc id="desc">Entity relationship diagram for users, categories, tags, posts, comments, and the post tags join table.</desc>
   <defs>
     <style>
-      .box { fill: #ffffff; stroke: #222; stroke-width: 2; }
-      .title { font: 700 16px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif; fill: #111; }
-      .text { font: 13px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif; fill: #111; }
-      .line { stroke: #444; stroke-width: 2; fill: none; }
+      .box { fill: #ffffff; stroke: #1f2937; stroke-width: 2; }
+      .head { fill: #1f2937; }
+      .headText { fill: #ffffff; font: 700 18px Arial, sans-serif; }
+      .text { fill: #111827; font: 15px Arial, sans-serif; }
+      .small { fill: #374151; font: 13px Arial, sans-serif; }
+      .line { stroke: #374151; stroke-width: 2; fill: none; marker-end: url(#arrow); }
     </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#374151" />
+    </marker>
   </defs>
 
-  <!-- User -->
-  <rect class="box" x="40" y="50" width="270" height="170" rx="10"/>
-  <text class="title" x="60" y="80">User</text>
-  <text class="text" x="60" y="110">email (unique)</text>
-  <text class="text" x="60" y="132">first_name</text>
-  <text class="text" x="60" y="154">last_name</text>
-  <text class="text" x="60" y="176">avatar (optional)</text>
-  <text class="text" x="60" y="198">date_joined</text>
+  <rect class="box" x="50" y="60" width="280" height="250" rx="6" />
+  <rect class="head" x="50" y="60" width="280" height="44" rx="6" />
+  <text class="headText" x="70" y="88">users.User</text>
+  <text class="text" x="70" y="135">id PK</text>
+  <text class="text" x="70" y="162">email unique</text>
+  <text class="text" x="70" y="189">first_name</text>
+  <text class="text" x="70" y="216">last_name</text>
+  <text class="text" x="70" y="243">is_active, is_staff</text>
+  <text class="text" x="70" y="270">date_joined, avatar</text>
 
-  <!-- Category -->
-  <rect class="box" x="40" y="300" width="270" height="140" rx="10"/>
-  <text class="title" x="60" y="330">Category</text>
-  <text class="text" x="60" y="360">name (unique)</text>
-  <text class="text" x="60" y="382">slug (unique)</text>
+  <rect class="box" x="450" y="40" width="280" height="160" rx="6" />
+  <rect class="head" x="450" y="40" width="280" height="44" rx="6" />
+  <text class="headText" x="470" y="68">blog.Category</text>
+  <text class="text" x="470" y="115">id PK</text>
+  <text class="text" x="470" y="142">name unique</text>
+  <text class="text" x="470" y="169">slug unique</text>
 
-  <!-- Tag -->
-  <rect class="box" x="420" y="300" width="270" height="140" rx="10"/>
-  <text class="title" x="440" y="330">Tag</text>
-  <text class="text" x="440" y="360">name (unique)</text>
-  <text class="text" x="440" y="382">slug (unique)</text>
+  <rect class="box" x="450" y="280" width="300" height="300" rx="6" />
+  <rect class="head" x="450" y="280" width="300" height="44" rx="6" />
+  <text class="headText" x="470" y="308">blog.Post</text>
+  <text class="text" x="470" y="355">id PK</text>
+  <text class="text" x="470" y="382">author_id FK users.User</text>
+  <text class="text" x="470" y="409">category_id FK Category nullable</text>
+  <text class="text" x="470" y="436">title</text>
+  <text class="text" x="470" y="463">slug unique</text>
+  <text class="text" x="470" y="490">body</text>
+  <text class="text" x="470" y="517">status draft/published</text>
+  <text class="text" x="470" y="544">created_at, updated_at</text>
 
-  <!-- Post -->
-  <rect class="box" x="420" y="50" width="270" height="200" rx="10"/>
-  <text class="title" x="440" y="80">Post</text>
-  <text class="text" x="440" y="110">author_id (FK → User)</text>
-  <text class="text" x="440" y="132">category_id (FK → Category, nullable)</text>
-  <text class="text" x="440" y="154">title</text>
-  <text class="text" x="440" y="176">slug (unique)</text>
-  <text class="text" x="440" y="198">status (draft/published)</text>
-  <text class="text" x="440" y="220">created_at, updated_at</text>
+  <rect class="box" x="850" y="60" width="250" height="160" rx="6" />
+  <rect class="head" x="850" y="60" width="250" height="44" rx="6" />
+  <text class="headText" x="870" y="88">blog.Tag</text>
+  <text class="text" x="870" y="135">id PK</text>
+  <text class="text" x="870" y="162">name unique</text>
+  <text class="text" x="870" y="189">slug unique</text>
 
-  <!-- Comment -->
-  <rect class="box" x="800" y="50" width="270" height="170" rx="10"/>
-  <text class="title" x="820" y="80">Comment</text>
-  <text class="text" x="820" y="110">post_id (FK → Post)</text>
-  <text class="text" x="820" y="132">author_id (FK → User)</text>
-  <text class="text" x="820" y="154">body</text>
-  <text class="text" x="820" y="176">created_at</text>
+  <rect class="box" x="850" y="330" width="250" height="150" rx="6" />
+  <rect class="head" x="850" y="330" width="250" height="44" rx="6" />
+  <text class="headText" x="870" y="358">blog.Post.tags</text>
+  <text class="text" x="870" y="405">id PK</text>
+  <text class="text" x="870" y="432">post_id FK Post</text>
+  <text class="text" x="870" y="459">tag_id FK Tag</text>
 
-  <!-- Relationships -->
-  <!-- User -> Post -->
-  <path class="line" d="M310 110 C360 110 370 110 420 110"/>
-  <!-- User -> Comment -->
-  <path class="line" d="M310 170 C560 170 570 170 800 170"/>
-  <!-- Post -> Comment -->
-  <path class="line" d="M690 140 C740 140 750 140 800 140"/>
-  <!-- Category -> Post -->
-  <path class="line" d="M310 350 C360 350 370 200 420 160"/>
-  <!-- Post <-> Tag (M2M) -->
-  <path class="line" d="M555 250 C555 275 555 275 555 300"/>
-  <text class="text" x="585" y="278">M2M</text>
+  <rect class="box" x="450" y="640" width="300" height="100" rx="6" />
+  <rect class="head" x="450" y="640" width="300" height="44" rx="6" />
+  <text class="headText" x="470" y="668">blog.Comment</text>
+  <text class="text" x="470" y="710">post_id FK Post, author_id FK User, body, created_at</text>
+
+  <path class="line" d="M330 185 C390 205 400 350 450 380" />
+  <text class="small" x="350" y="245">1 user writes many posts</text>
+
+  <path class="line" d="M590 200 C590 230 590 250 590 280" />
+  <text class="small" x="610" y="245">1 category has many posts</text>
+
+  <path class="line" d="M750 430 C790 420 810 410 850 405" />
+  <text class="small" x="770" y="392">many-to-many</text>
+
+  <path class="line" d="M975 220 C975 260 975 290 975 330" />
+  <text class="small" x="990" y="280">1 tag joins many posts</text>
+
+  <path class="line" d="M600 580 C600 600 600 620 600 640" />
+  <text class="small" x="615" y="615">1 post has many comments</text>
+
+  <path class="line" d="M330 245 C400 420 350 645 450 700" />
+  <text class="small" x="215" y="520">1 user writes many comments</text>
 </svg>
+
