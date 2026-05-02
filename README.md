@@ -71,3 +71,19 @@ New comments publish a JSON message to the `comments` channel. To listen:
 ```bash
 python manage.py listen_comments
 ```
+
+# Homework 4
+## nginx
+
+```
+docker compose up --build
+curl -I http://localhost/admin/login/
+curl -I http://localhost/static/admin/css/base.css
+curl <a http://localhost/api/posts/
+
+curl <a http://localhost:8000/
+ws://localhost/ws/posts/<existing-slug>/comments/?token=<jwt>
+```
+
+
+

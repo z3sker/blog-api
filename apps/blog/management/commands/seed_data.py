@@ -30,9 +30,19 @@ class Command(BaseCommand):
             )[0],
         ]
         for user in users:
-            if not user.has_usable_password():
+            fields_to_update = []
+
+            if not user.check_password(USER_PASSWORD):
                 user.set_password(USER_PASSWORD)
-                user.save(update_fields=["password"])
+                fields_to_update.append("password")
+
+            if not user.is_active:
+                user.is_active = True
+                fields_to_update.append("is_active")
+
+            if fields_to_update:
+                user.save(update_fields=fields_to_update)
+
 
         categories = [
             Category.objects.get_or_create(
