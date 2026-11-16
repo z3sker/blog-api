@@ -20,6 +20,7 @@ blog-api/
 │   ├── auths/          custom user model, JWT authentication
 │   └── blog/           posts, comments, categories, tags
 ├── docs/
+├── templates/          admin template overrides
 └── settings/
     ├── .env            secrets (not committed)
     ├── .env.example
@@ -60,6 +61,62 @@ Set `BLOG_SECRET_KEY` in `settings/.env` to a long random string.
 | `BLOG_DB_*`          | PostgreSQL connection for `prod`              |
 | `BLOG_REDIS_URL`     | Redis connection URL                          |
 | `BLOG_SQL_LOGGING`   | `True` prints every SQL query in `local`      |
+
+## Seeding
+
+`python manage.py seed` fills the database with fake users, categories, tags, posts and comments.
+
+| Argument     | Default | Description                         |
+|--------------|---------|-------------------------------------|
+| `--users`    | `20`    | Number of users to create           |
+| `--posts`    | `100`   | Number of posts to create           |
+| `--comments` | `500`   | Number of comments to create        |
+| `--clear`    | off     | Delete existing data before seeding |
+
+`--clear` deletes comments, posts, tags, categories and every user except superusers.
+All seeded users share the password stored in `SEED_PASSWORD`
+(`apps/blog/management/commands/seed.py`).
+
+```
+$ python manage.py seed --users 50 --posts 300 --comments 1500
+Users:       50 created
+Categories:   8 created
+Tags:        20 created
+Posts:      300 created
+Comments:  1500 created
+Done in 0.30 seconds
+```
+
+From an empty database to a working admin full of data:
+
+```bash
+python manage.py migrate
+python manage.py seed
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+## Admin
+
+The admin uses [Django Unfold](https://unfoldadmin.com/): a custom dashboard, sidebar with a
+drafts badge, Cmd+K search, post tabs (All / Published / Drafts), dropdown and autocomplete
+filters, row/list/detail/submit-line actions and a WYSIWYG editor for posts.
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Post list with filters
+
+![Post list with filters](docs/screenshots/post_list_filters.png)
+
+### Post edit page
+
+![Post edit page](docs/screenshots/post_edit.png)
+
+### User list
+
+![User list](docs/screenshots/user_list.png)
 
 ## Authentication
 

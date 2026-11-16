@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+
+{% load i18n unfold %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_("Django site admin") }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+    {% component "unfold/components/container.html" %}
+        <div class="flex flex-col gap-8">
+            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                {% for card in cards %}
+                    {% component "unfold/components/card.html" with icon=card.icon %}
+                        {% component "unfold/components/text.html" %}{{ card.title }}{% endcomponent %}
+                        {% component "unfold/components/title.html" %}{{ card.value }}{% endcomponent %}
+                    {% endcomponent %}
+                {% endfor %}
+            </div>
+
+            <div class="grid gap-6 xl:grid-cols-3">
+                <div class="xl:col-span-2">
+                    {% component "unfold/components/card.html" with title="Posts per category" %}
+                        {% component "unfold/components/chart/bar.html" with data=posts_per_category_chart height=320 %}{% endcomponent %}
+                    {% endcomponent %}
+                </div>
+
+                {% component "unfold/components/card.html" with title="Published vs drafts" %}
+                    <div class="flex flex-col gap-6">
+                        {% for item in status_progress %}
+                            {% component "unfold/components/progress.html" with title=item.title description=item.description value=item.value %}{% endcomponent %}
+                        {% endfor %}
+                    </div>
+                {% endcomponent %}
+            </div>
+
+            {% component "unfold/components/card.html" with title="Top 5 authors" %}
+                {% component "unfold/components/table.html" with table=top_authors_table card_included=1 striped=1 %}{% endcomponent %}
+            {% endcomponent %}
+        </div>
+    {% endcomponent %}
+{% endblock %}

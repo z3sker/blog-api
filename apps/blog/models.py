@@ -3,7 +3,9 @@ from django.db import models
 
 from apps.blog.constants import (
     CATEGORY_NAME_MAX_LENGTH,
+    POST_STATUS_DRAFT,
     POST_STATUS_MAX_LENGTH,
+    POST_STATUS_PUBLISHED,
     POST_TITLE_MAX_LENGTH,
     STR_PREVIEW_LENGTH,
     TAG_NAME_MAX_LENGTH,
@@ -38,8 +40,8 @@ class Tag(models.Model):
 
 class Post(models.Model):
     class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        PUBLISHED = "published", "Published"
+        DRAFT = POST_STATUS_DRAFT, "Draft"
+        PUBLISHED = POST_STATUS_PUBLISHED, "Published"
 
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=POST_TITLE_MAX_LENGTH)
