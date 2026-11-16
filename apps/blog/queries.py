@@ -2,7 +2,7 @@ from collections.abc import Callable
 from datetime import date, timedelta
 from typing import Any
 
-from django.db.models import QuerySet
+from django.db.models import F, Q, QuerySet
 from django.utils import timezone
 
 from apps.auths.models import User
@@ -11,6 +11,7 @@ from apps.blog.models import Category, Comment, Post
 NEWEST_POSTS_LIMIT = 5
 PAGE_SIZE = 10
 EMAIL_DOMAIN_PREFIX = "@"
+EDIT_THRESHOLD = timedelta(hours=1)
 
 
 def categories_by_name() -> QuerySet[Category]:
@@ -119,6 +120,35 @@ def posts_with_both_tags(first_slug: str, second_slug: str) -> QuerySet[Post]:
     return Post.objects.filter(tags__slug=first_slug).filter(tags__slug=second_slug)
 
 
+def search_posts(text: str) -> QuerySet[Post]:
+    """Posts with the text in the title or in the body, ignoring letter case."""
+    return Post.objects.filter(Q(title__icontains=text) | Q(body__icontains=text))
+
+
+def published_posts_missing_info() -> QuerySet[Post]:
+    """Published posts without a category or without tags, each post once."""
+    return (
+        Post.objects.filter(status=Post.Status.PUBLISHED)
+        .filter(Q(category__isnull=True) | Q(tags__isnull=True))
+        .distinct()
+    )
+
+
+def edited_posts() -> QuerySet[Post]:
+    """Posts edited more than EDIT_THRESHOLD after they were created."""
+    return Post.objects.filter(updated_at__gt=F("created_at") + EDIT_THRESHOLD)
+
+
+def comments_by_post_author() -> QuerySet[Comment]:
+    """Comments written by the author of the post."""
+    return Comment.objects.filter(author=F("post__author"))
+
+
+def comments_before_post() -> QuerySet[Comment]:
+    """Comments created before their post."""
+    return Comment.objects.filter(created_at__lt=F("post__created_at"))
+
+
 QUERIES: dict[int, Callable[..., Any]] = {
     1: categories_by_name,
     2: published_posts,
@@ -141,4 +171,9 @@ QUERIES: dict[int, Callable[..., Any]] = {
     19: posts_without_tags,
     20: users_without_comments,
     21: posts_with_both_tags,
+    22: search_posts,
+    23: published_posts_missing_info,
+    24: edited_posts,
+    25: comments_by_post_author,
+    26: comments_before_post,
 }

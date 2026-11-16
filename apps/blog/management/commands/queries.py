@@ -74,6 +74,7 @@ QUERY_ARGUMENTS: dict[int, dict[str, Any] | Callable[[], dict[str, Any]]] = {
     16: {"tag_slug": SAMPLE_TAG_SLUG},
     17: {"category_slug": SAMPLE_CATEGORY_SLUG},
     21: tag_pair_arguments,
+    22: {"text": SAMPLE_WORD},
 }
 
 
