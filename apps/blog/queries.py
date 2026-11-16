@@ -2,7 +2,7 @@ from collections.abc import Callable
 from datetime import date, timedelta
 from typing import Any
 
-from django.db.models import F, Q, QuerySet, Value
+from django.db.models import Avg, Count, F, Max, Min, Q, QuerySet, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -14,6 +14,8 @@ PAGE_SIZE = 10
 EMAIL_DOMAIN_PREFIX = "@"
 EDIT_THRESHOLD = timedelta(hours=1)
 UNCATEGORIZED = "Uncategorized"
+AVERAGE_PRECISION = 2
+EMPTY_AVERAGE = 0.0
 
 
 def categories_by_name() -> QuerySet[Category]:
@@ -172,6 +174,27 @@ def published_posts_overview() -> list[dict[str, Any]]:
     )
 
 
+def posts_stats() -> dict[str, Any]:
+    """Post counts and the dates of the first and the last post in one query."""
+    return Post.objects.aggregate(
+        total=Count("id"),
+        published=Count("id", filter=Q(status=Post.Status.PUBLISHED)),
+        drafts=Count("id", filter=Q(status=Post.Status.DRAFT)),
+        first_post_at=Min("created_at"),
+        last_post_at=Max("created_at"),
+    )
+
+
+def average_comments_per_post() -> float:
+    """Average number of comments on a published post, rounded to 2 digits."""
+    result = (
+        Post.objects.filter(status=Post.Status.PUBLISHED)
+        .annotate(comment_count=Count("comment"))
+        .aggregate(average=Avg("comment_count", default=EMPTY_AVERAGE))
+    )
+    return round(result["average"], AVERAGE_PRECISION)
+
+
 QUERIES: dict[int, Callable[..., Any]] = {
     1: categories_by_name,
     2: published_posts,
@@ -201,4 +224,6 @@ QUERIES: dict[int, Callable[..., Any]] = {
     26: comments_before_post,
     27: published_authors_emails,
     28: published_posts_overview,
+    29: posts_stats,
+    30: average_comments_per_post,
 }
