@@ -7,7 +7,7 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.auths.models import User
-from apps.blog.models import Category, Comment, Post
+from apps.blog.models import Category, Comment, Post, Tag
 
 NEWEST_POSTS_LIMIT = 5
 PAGE_SIZE = 10
@@ -16,6 +16,7 @@ EDIT_THRESHOLD = timedelta(hours=1)
 UNCATEGORIZED = "Uncategorized"
 AVERAGE_PRECISION = 2
 EMPTY_AVERAGE = 0.0
+TOP_AUTHORS_LIMIT = 5
 
 
 def categories_by_name() -> QuerySet[Category]:
@@ -195,6 +196,47 @@ def average_comments_per_post() -> float:
     return round(result["average"], AVERAGE_PRECISION)
 
 
+def categories_with_post_count() -> QuerySet[Category]:
+    """Every category with post_count, most posts first, then by name."""
+    return Category.objects.annotate(post_count=Count("post")).order_by("-post_count", "name")
+
+
+def categories_with_published_count() -> QuerySet[Category]:
+    """Every category with published_count, including categories with 0."""
+    return Category.objects.annotate(
+        published_count=Count("post", filter=Q(post__status=Post.Status.PUBLISHED))
+    ).order_by("name")
+
+
+def top_authors() -> QuerySet[User]:
+    """Top 5 users by number of published posts, with published_count."""
+    return User.objects.annotate(
+        published_count=Count("post", filter=Q(post__status=Post.Status.PUBLISHED))
+    ).order_by("-published_count", "email")[:TOP_AUTHORS_LIMIT]
+
+
+def popular_tags(min_posts: int) -> QuerySet[Tag]:
+    """Tags used in at least min_posts posts, with post_count."""
+    return (
+        Tag.objects.annotate(post_count=Count("post"))
+        .filter(post_count__gte=min_posts)
+        .order_by("-post_count", "name")
+    )
+
+
+def posts_per_status() -> list[dict[str, Any]]:
+    """Number of posts for each status."""
+    return list(Post.objects.values("status").annotate(count=Count("id")).order_by("status"))
+
+
+def users_activity() -> QuerySet[User]:
+    """Every user with post_count and comment_count."""
+    return User.objects.annotate(
+        post_count=Count("post", distinct=True),
+        comment_count=Count("comment", distinct=True),
+    ).order_by("email")
+
+
 QUERIES: dict[int, Callable[..., Any]] = {
     1: categories_by_name,
     2: published_posts,
@@ -226,4 +268,10 @@ QUERIES: dict[int, Callable[..., Any]] = {
     28: published_posts_overview,
     29: posts_stats,
     30: average_comments_per_post,
+    31: categories_with_post_count,
+    32: categories_with_published_count,
+    33: top_authors,
+    34: popular_tags,
+    35: posts_per_status,
+    36: users_activity,
 }

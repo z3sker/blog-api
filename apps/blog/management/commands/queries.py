@@ -24,6 +24,7 @@ MIN_TAGS_FOR_PAIR = 2
 SAMPLE_CATEGORY_SLUG = "python"
 SAMPLE_TAG_SLUG = "python"
 SAMPLE_SECOND_TAG_SLUG = "django"
+SAMPLE_MIN_POSTS = 10
 
 
 def post_slug_arguments() -> dict[str, Any]:
@@ -75,6 +76,7 @@ QUERY_ARGUMENTS: dict[int, dict[str, Any] | Callable[[], dict[str, Any]]] = {
     17: {"category_slug": SAMPLE_CATEGORY_SLUG},
     21: tag_pair_arguments,
     22: {"text": SAMPLE_WORD},
+    34: {"min_posts": SAMPLE_MIN_POSTS},
 }
 
 
