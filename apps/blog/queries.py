@@ -3,7 +3,20 @@ from datetime import date, timedelta
 from typing import Any
 
 from django.db import transaction
-from django.db.models import Avg, Case, CharField, Count, F, Max, Min, Q, QuerySet, Value, When
+from django.db.models import (
+    Avg,
+    Case,
+    CharField,
+    Count,
+    F,
+    Max,
+    Min,
+    Prefetch,
+    Q,
+    QuerySet,
+    Value,
+    When,
+)
 from django.db.models.functions import Coalesce, Concat, TruncMonth
 from django.utils import timezone
 from django.utils.text import slugify
@@ -25,6 +38,10 @@ NORMAL_MIN_COMMENTS = 3
 POPULARITY_HOT = "hot"
 POPULARITY_NORMAL = "normal"
 POPULARITY_QUIET = "quiet"
+FEED_LIMIT = 50
+FEED_SEPARATOR = " | "
+NEWEST_WITH_TAGS_LIMIT = 20
+TAGS_SEPARATOR = ", "
 
 
 def categories_by_name() -> QuerySet[Category]:
@@ -312,6 +329,36 @@ def delete_inactive_users_comments() -> int:
     return deleted
 
 
+def published_feed() -> list[str]:
+    """The 50 newest published posts as 'title | author email | category name'."""
+    posts = published_posts().select_related("author", "category")[:FEED_LIMIT]
+    return [
+        FEED_SEPARATOR.join(
+            [post.title, post.author.email, post.category.name if post.category else UNCATEGORIZED]
+        )
+        for post in posts
+    ]
+
+
+def newest_posts_with_tags() -> list[str]:
+    """The 20 newest posts as 'title: tag1, tag2'."""
+    posts = Post.objects.prefetch_related("tags").order_by("-created_at")[:NEWEST_WITH_TAGS_LIMIT]
+    return [
+        f"{post.title}: {TAGS_SEPARATOR.join(tag.name for tag in post.tags.all())}"
+        for post in posts
+    ]
+
+
+def categories_with_published_posts() -> dict[str, list[str]]:
+    """Category name mapped to the titles of its published posts, newest first."""
+    categories = Category.objects.order_by("name").prefetch_related(
+        Prefetch("post_set", queryset=published_posts(), to_attr="published_posts")
+    )
+    return {
+        category.name: [post.title for post in category.published_posts] for category in categories
+    }
+
+
 QUERIES: dict[int, Callable[..., Any]] = {
     1: categories_by_name,
     2: published_posts,
@@ -357,4 +404,7 @@ QUERIES: dict[int, Callable[..., Any]] = {
     42: tag_category_posts,
     43: merge_categories,
     44: delete_inactive_users_comments,
+    45: published_feed,
+    46: newest_posts_with_tags,
+    47: categories_with_published_posts,
 }
