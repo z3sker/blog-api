@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="640" viewBox="0 0 1260 640" font-family="Helvetica, Arial, sans-serif">
+<defs><marker id="one" markerWidth="12" markerHeight="12" refX="0" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M5,0 L5,12 M9,0 L9,12" stroke="#334155" stroke-width="1.6"/></marker>
+<marker id="many" markerWidth="14" markerHeight="14" refX="14" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,7 L14,0 M0,7 L14,7 M0,7 L14,14" stroke="#334155" stroke-width="1.6" fill="none"/></marker></defs>
+<rect width="1260" height="640" fill="#ffffff"/>
+<text x="40" y="34" font-size="22" font-weight="700" fill="#0f172a">Blog API — ERD</text>
+<text x="40" y="58" font-size="13" fill="#64748b">auths.User · blog.Category · blog.Tag · blog.Post · blog.Comment</text>
+<path d="M360,199.0 H410 V115.0 H470" fill="none" stroke="#334155" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="376" y="109.0" font-size="11" fill="#475569">author</text>
+<path d="M360,199.0 H430 V501.0 H470" fill="none" stroke="#334155" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="380" y="517.0" font-size="11" fill="#475569">author</text>
+<path d="M790,89.0 H820 V475.0 H790" fill="none" stroke="#334155" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="826" y="445.0" font-size="11" fill="#475569">post</text>
+<path d="M920,89.0 H860 V219.0 H790" fill="none" stroke="#334155" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="870" y="196" font-size="11" fill="#475569">category (nullable)</text>
+<path d="M790,89.0 H840 V300.0 H920" fill="none" stroke="#334155" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="846" y="294.0" font-size="11" fill="#475569">tags (M2M)</text>
+<path d="M1210,459.0 H1240 V326.0 H1210" fill="none" stroke="#334155" stroke-width="1.6" marker-start="url(#one)" marker-end="url(#many)"/>
+<text x="0" y="0" font-size="11" fill="#475569"></text>
+<rect x="40" y="150" width="320" height="296" rx="8" fill="#fff" stroke="#0f766e" stroke-width="1.5"/>
+<path d="M40,158 a8,8 0 0 1 8,-8 h304 a8,8 0 0 1 8,8 v28 h-320 z" fill="#0f766e"/>
+<text x="52" y="173" font-size="14" font-weight="700" fill="#fff">User</text>
+<text x="348" y="173" font-size="11" fill="#ffffffcc" text-anchor="end">auths_user</text>
+<text x="52" y="203" font-size="12.5" fill="#0f172a" font-weight="700">id</text>
+<text x="190" y="203" font-size="12" fill="#64748b">bigint</text>
+<text x="348" y="203" font-size="11" font-weight="700" fill="#b45309" text-anchor="end">PK</text>
+<rect x="41" y="212" width="318" height="26" fill="#f8fafc"/>
+<text x="52" y="229" font-size="12.5" fill="#0f172a">email</text>
+<text x="190" y="229" font-size="12" fill="#64748b">varchar(254)</text>
+<text x="348" y="229" font-size="11" font-weight="700" fill="#64748b" text-anchor="end">UQ</text>
+<text x="52" y="255" font-size="12.5" fill="#0f172a">password</text>
+<text x="190" y="255" font-size="12" fill="#64748b">varchar(128)</text>
+<text x="348" y="255" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="41" y="264" width="318" height="26" fill="#f8fafc"/>
+<text x="52" y="281" font-size="12.5" fill="#0f172a">first_name</text>
+<text x="190" y="281" font-size="12" fill="#64748b">varchar(50)</text>
+<text x="348" y="281" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<text x="52" y="307" font-size="12.5" fill="#0f172a">last_name</text>
+<text x="190" y="307" font-size="12" fill="#64748b">varchar(50)</text>
+<text x="348" y="307" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="41" y="316" width="318" height="26" fill="#f8fafc"/>
+<text x="52" y="333" font-size="12.5" fill="#0f172a">is_active</text>
+<text x="190" y="333" font-size="12" fill="#64748b">bool</text>
+<text x="348" y="333" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<text x="52" y="359" font-size="12.5" fill="#0f172a">is_staff</text>
+<text x="190" y="359" font-size="12" fill="#64748b">bool</text>
+<text x="348" y="359" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="41" y="368" width="318" height="26" fill="#f8fafc"/>
+<text x="52" y="385" font-size="12.5" fill="#0f172a">is_superuser</text>
+<text x="190" y="385" font-size="12" fill="#64748b">bool</text>
+<text x="348" y="385" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<text x="52" y="411" font-size="12.5" fill="#0f172a">last_login</text>
+<text x="190" y="411" font-size="12" fill="#64748b">datetime</text>
+<text x="348" y="411" font-size="11" font-weight="700" fill="#64748b" text-anchor="end">NULL</text>
+<rect x="41" y="420" width="318" height="26" fill="#f8fafc"/>
+<text x="52" y="437" font-size="12.5" fill="#0f172a">date_joined</text>
+<text x="190" y="437" font-size="12" fill="#64748b">datetime</text>
+<text x="348" y="437" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="470" y="40" width="320" height="270" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+<path d="M470,48 a8,8 0 0 1 8,-8 h304 a8,8 0 0 1 8,8 v28 h-320 z" fill="#2563eb"/>
+<text x="482" y="63" font-size="14" font-weight="700" fill="#fff">Post</text>
+<text x="778" y="63" font-size="11" fill="#ffffffcc" text-anchor="end">blog_post</text>
+<text x="482" y="93" font-size="12.5" fill="#0f172a" font-weight="700">id</text>
+<text x="620" y="93" font-size="12" fill="#64748b">bigint</text>
+<text x="778" y="93" font-size="11" font-weight="700" fill="#b45309" text-anchor="end">PK</text>
+<rect x="471" y="102" width="318" height="26" fill="#f8fafc"/>
+<text x="482" y="119" font-size="12.5" fill="#0f172a">author_id</text>
+<text x="620" y="119" font-size="12" fill="#64748b">bigint</text>
+<text x="778" y="119" font-size="11" font-weight="700" fill="#2563eb" text-anchor="end">FK</text>
+<text x="482" y="145" font-size="12.5" fill="#0f172a">title</text>
+<text x="620" y="145" font-size="12" fill="#64748b">varchar(200)</text>
+<text x="778" y="145" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="471" y="154" width="318" height="26" fill="#f8fafc"/>
+<text x="482" y="171" font-size="12.5" fill="#0f172a">slug</text>
+<text x="620" y="171" font-size="12" fill="#64748b">varchar(200)</text>
+<text x="778" y="171" font-size="11" font-weight="700" fill="#64748b" text-anchor="end">UQ</text>
+<text x="482" y="197" font-size="12.5" fill="#0f172a">body</text>
+<text x="620" y="197" font-size="12" fill="#64748b">text</text>
+<text x="778" y="197" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="471" y="206" width="318" height="26" fill="#f8fafc"/>
+<text x="482" y="223" font-size="12.5" fill="#0f172a">category_id</text>
+<text x="620" y="223" font-size="12" fill="#64748b">bigint</text>
+<text x="778" y="223" font-size="11" font-weight="700" fill="#2563eb" text-anchor="end">FK NULL</text>
+<text x="482" y="249" font-size="12.5" fill="#0f172a">status</text>
+<text x="620" y="249" font-size="12" fill="#64748b">varchar(20)</text>
+<text x="778" y="249" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="471" y="258" width="318" height="26" fill="#f8fafc"/>
+<text x="482" y="275" font-size="12.5" fill="#0f172a">created_at</text>
+<text x="620" y="275" font-size="12" fill="#64748b">datetime</text>
+<text x="778" y="275" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<text x="482" y="301" font-size="12.5" fill="#0f172a">updated_at</text>
+<text x="620" y="301" font-size="12" fill="#64748b">datetime</text>
+<text x="778" y="301" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="470" y="400" width="320" height="166" rx="8" fill="#fff" stroke="#7c3aed" stroke-width="1.5"/>
+<path d="M470,408 a8,8 0 0 1 8,-8 h304 a8,8 0 0 1 8,8 v28 h-320 z" fill="#7c3aed"/>
+<text x="482" y="423" font-size="14" font-weight="700" fill="#fff">Comment</text>
+<text x="778" y="423" font-size="11" fill="#ffffffcc" text-anchor="end">blog_comment</text>
+<text x="482" y="453" font-size="12.5" fill="#0f172a" font-weight="700">id</text>
+<text x="620" y="453" font-size="12" fill="#64748b">bigint</text>
+<text x="778" y="453" font-size="11" font-weight="700" fill="#b45309" text-anchor="end">PK</text>
+<rect x="471" y="462" width="318" height="26" fill="#f8fafc"/>
+<text x="482" y="479" font-size="12.5" fill="#0f172a">post_id</text>
+<text x="620" y="479" font-size="12" fill="#64748b">bigint</text>
+<text x="778" y="479" font-size="11" font-weight="700" fill="#2563eb" text-anchor="end">FK</text>
+<text x="482" y="505" font-size="12.5" fill="#0f172a">author_id</text>
+<text x="620" y="505" font-size="12" fill="#64748b">bigint</text>
+<text x="778" y="505" font-size="11" font-weight="700" fill="#2563eb" text-anchor="end">FK</text>
+<rect x="471" y="514" width="318" height="26" fill="#f8fafc"/>
+<text x="482" y="531" font-size="12.5" fill="#0f172a">body</text>
+<text x="620" y="531" font-size="12" fill="#64748b">text</text>
+<text x="778" y="531" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<text x="482" y="557" font-size="12.5" fill="#0f172a">created_at</text>
+<text x="620" y="557" font-size="12" fill="#64748b">datetime</text>
+<text x="778" y="557" font-size="11" font-weight="700" fill="#64748b" text-anchor="end"></text>
+<rect x="920" y="40" width="290" height="114" rx="8" fill="#fff" stroke="#d97706" stroke-width="1.5"/>
+<path d="M920,48 a8,8 0 0 1 8,-8 h274 a8,8 0 0 1 8,8 v28 h-290 z" fill="#d97706"/>
+<text x="932" y="63" font-size="14" font-weight="700" fill="#fff">Category</text>
+<text x="1198" y="63" font-size="11" fill="#ffffffcc" text-anchor="end">blog_category</text>
+<text x="932" y="93" font-size="12.5" fill="#0f172a" font-weight="700">id</text>
+<text x="1070" y="93" font-size="12" fill="#64748b">bigint</text>
+<text x="1198" y="93" font-size="11" font-weight="700" fill="#b45309" text-anchor="end">PK</text>
+<rect x="921" y="102" width="288" height="26" fill="#f8fafc"/>
+<text x="932" y="119" font-size="12.5" fill="#0f172a">name</text>
+<text x="1070" y="119" font-size="12" fill="#64748b">varchar(100)</text>
+<text x="1198" y="119" font-size="11" font-weight="700" fill="#64748b" text-anchor="end">UQ</text>
+<text x="932" y="145" font-size="12.5" fill="#0f172a">slug</text>
+<text x="1070" y="145" font-size="12" fill="#64748b">varchar(50)</text>
+<text x="1198" y="145" font-size="11" font-weight="700" fill="#64748b" text-anchor="end">UQ</text>
+<rect x="920" y="225" width="290" height="114" rx="8" fill="#fff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M920,233 a8,8 0 0 1 8,-8 h274 a8,8 0 0 1 8,8 v28 h-290 z" fill="#64748b"/>
+<text x="932" y="248" font-size="14" font-weight="700" fill="#fff">Post.tags (join table)</text>
+<text x="1198" y="248" font-size="11" fill="#ffffffcc" text-anchor="end">blog_post_tags</text>
+<text x="932" y="278" font-size="12.5" fill="#0f172a" font-weight="700">id</text>
+<text x="1070" y="278" font-size="12" fill="#64748b">bigint</text>
+<text x="1198" y="278" font-size="11" font-weight="700" fill="#b45309" text-anchor="end">PK</text>
+<rect x="921" y="287" width="288" height="26" fill="#f8fafc"/>
+<text x="932" y="304" font-size="12.5" fill="#0f172a">post_id</text>
+<text x="1070" y="304" font-size="12" fill="#64748b">bigint</text>
+<text x="1198" y="304" font-size="11" font-weight="700" fill="#2563eb" text-anchor="end">FK</text>
+<text x="932" y="330" font-size="12.5" fill="#0f172a">tag_id</text>
+<text x="1070" y="330" font-size="12" fill="#64748b">bigint</text>
+<text x="1198" y="330" font-size="11" font-weight="700" fill="#2563eb" text-anchor="end">FK</text>
+<rect x="920" y="410" width="290" height="114" rx="8" fill="#fff" stroke="#db2777" stroke-width="1.5"/>
+<path d="M920,418 a8,8 0 0 1 8,-8 h274 a8,8 0 0 1 8,8 v28 h-290 z" fill="#db2777"/>
+<text x="932" y="433" font-size="14" font-weight="700" fill="#fff">Tag</text>
+<text x="1198" y="433" font-size="11" fill="#ffffffcc" text-anchor="end">blog_tag</text>
+<text x="932" y="463" font-size="12.5" fill="#0f172a" font-weight="700">id</text>
+<text x="1070" y="463" font-size="12" fill="#64748b">bigint</text>
+<text x="1198" y="463" font-size="11" font-weight="700" fill="#b45309" text-anchor="end">PK</text>
+<rect x="921" y="472" width="288" height="26" fill="#f8fafc"/>
+<text x="932" y="489" font-size="12.5" fill="#0f172a">name</text>
+<text x="1070" y="489" font-size="12" fill="#64748b">varchar(50)</text>
+<text x="1198" y="489" font-size="11" font-weight="700" fill="#64748b" text-anchor="end">UQ</text>
+<text x="932" y="515" font-size="12.5" fill="#0f172a">slug</text>
+<text x="1070" y="515" font-size="12" fill="#64748b">varchar(50)</text>
+<text x="1198" y="515" font-size="11" font-weight="700" fill="#64748b" text-anchor="end">UQ</text>
+<text x="40" y="620" font-size="11" fill="#64748b">Crow's foot notation: ‖ = one, ⋲ = many. Post.category uses on_delete=SET_NULL; all other FKs use CASCADE.</text>
+</svg>
