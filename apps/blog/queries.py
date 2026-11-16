@@ -6,7 +6,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from apps.auths.models import User
-from apps.blog.models import Category, Post
+from apps.blog.models import Category, Comment, Post
 
 NEWEST_POSTS_LIMIT = 5
 PAGE_SIZE = 10
@@ -84,6 +84,41 @@ def posts_between(start: date, end: date) -> QuerySet[Post]:
     return Post.objects.filter(created_at__date__range=(start, end))
 
 
+def author_published_posts(email: str) -> QuerySet[Post]:
+    """Published posts of the author with this email, ignoring letter case."""
+    return Post.objects.filter(author__email__iexact=email, status=Post.Status.PUBLISHED)
+
+
+def posts_with_tag(tag_slug: str) -> QuerySet[Post]:
+    """Posts that have the tag with this slug."""
+    return Post.objects.filter(tags__slug=tag_slug)
+
+
+def comments_in_category(category_slug: str) -> QuerySet[Comment]:
+    """Comments on posts of the category with this slug."""
+    return Comment.objects.filter(post__category__slug=category_slug)
+
+
+def users_with_published_posts() -> QuerySet[User]:
+    """Users with at least one published post, each user once."""
+    return User.objects.filter(post__status=Post.Status.PUBLISHED).distinct()
+
+
+def posts_without_tags() -> QuerySet[Post]:
+    """Posts that have no tags."""
+    return Post.objects.filter(tags__isnull=True)
+
+
+def users_without_comments() -> QuerySet[User]:
+    """Users who have never written a comment."""
+    return User.objects.filter(comment__isnull=True)
+
+
+def posts_with_both_tags(first_slug: str, second_slug: str) -> QuerySet[Post]:
+    """Posts that have both tags."""
+    return Post.objects.filter(tags__slug=first_slug).filter(tags__slug=second_slug)
+
+
 QUERIES: dict[int, Callable[..., Any]] = {
     1: categories_by_name,
     2: published_posts,
@@ -99,4 +134,11 @@ QUERIES: dict[int, Callable[..., Any]] = {
     12: posts_in_month,
     13: posts_last_days,
     14: posts_between,
+    15: author_published_posts,
+    16: posts_with_tag,
+    17: comments_in_category,
+    18: users_with_published_posts,
+    19: posts_without_tags,
+    20: users_without_comments,
+    21: posts_with_both_tags,
 }

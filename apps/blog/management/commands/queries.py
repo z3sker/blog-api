@@ -4,10 +4,11 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import connection
-from django.db.models import Model, QuerySet
+from django.db.models import Count, Model, QuerySet
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
+from apps.auths.models import User
 from apps.blog.models import Post
 from apps.blog.queries import QUERIES
 
@@ -19,6 +20,10 @@ SAMPLE_DOMAIN = "example.com"
 SAMPLE_DAYS = 30
 SAMPLE_RANGE_DAYS = 60
 SAMPLE_CATEGORY_SLUGS = ["python", "django", "devops"]
+MIN_TAGS_FOR_PAIR = 2
+SAMPLE_CATEGORY_SLUG = "python"
+SAMPLE_TAG_SLUG = "python"
+SAMPLE_SECOND_TAG_SLUG = "django"
 
 
 def post_slug_arguments() -> dict[str, Any]:
@@ -35,6 +40,27 @@ def date_range_arguments() -> dict[str, Any]:
     return {"start": today - timedelta(days=SAMPLE_RANGE_DAYS), "end": today}
 
 
+def author_email_arguments() -> dict[str, Any]:
+    email = (
+        User.objects.filter(post__status=Post.Status.PUBLISHED)
+        .values_list("email", flat=True)
+        .first()
+    )
+    return {"email": email}
+
+
+def tag_pair_arguments() -> dict[str, Any]:
+    post = (
+        Post.objects.annotate(tag_count=Count("tags"))
+        .filter(tag_count__gte=MIN_TAGS_FOR_PAIR)
+        .first()
+    )
+    if post is None:
+        return {"first_slug": SAMPLE_TAG_SLUG, "second_slug": SAMPLE_SECOND_TAG_SLUG}
+    first_slug, second_slug = post.tags.values_list("slug", flat=True)[:MIN_TAGS_FOR_PAIR]
+    return {"first_slug": first_slug, "second_slug": second_slug}
+
+
 QUERY_ARGUMENTS: dict[int, dict[str, Any] | Callable[[], dict[str, Any]]] = {
     4: post_slug_arguments,
     7: {"page": SAMPLE_PAGE},
@@ -44,6 +70,10 @@ QUERY_ARGUMENTS: dict[int, dict[str, Any] | Callable[[], dict[str, Any]]] = {
     12: current_month_arguments,
     13: {"days": SAMPLE_DAYS},
     14: date_range_arguments,
+    15: author_email_arguments,
+    16: {"tag_slug": SAMPLE_TAG_SLUG},
+    17: {"category_slug": SAMPLE_CATEGORY_SLUG},
+    21: tag_pair_arguments,
 }
 
 
