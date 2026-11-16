@@ -1,5 +1,6 @@
 import random
 import time
+from datetime import datetime, timedelta
 from typing import Any
 
 from faker import Faker
@@ -7,6 +8,7 @@ from faker import Faker
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
+from django.utils import timezone
 from django.utils.text import slugify
 
 from apps.auths.models import User
@@ -36,6 +38,11 @@ BODY_TEMPLATE = "<div>{}</div>"
 PARAGRAPH_SEPARATOR = "<br><br>"
 TITLE_END = "."
 SLUG_SUFFIX_START = 2
+
+DATE_RANGE_DAYS = 365
+EDITED_POST_RATIO = 0.3
+MIN_EDIT_DELAY_DAYS = 1
+MAX_EDIT_DELAY_DAYS = 30
 
 MIN_COMMENT_SENTENCES = 1
 MAX_COMMENT_SENTENCES = 3
@@ -242,12 +249,28 @@ class Command(BaseCommand):
             )
 
         posts = Post.objects.bulk_create(posts, batch_size=BATCH_SIZE)
+        self.spread_post_dates(posts)
 
         for post in posts:
             tags_count = random.randint(MIN_TAGS_PER_POST, min(MAX_TAGS_PER_POST, len(tags)))
             post.tags.set(random.sample(tags, tags_count))
 
         return posts
+
+    def spread_post_dates(self, posts: list[Post]) -> None:
+        now = timezone.now()
+        for post in posts:
+            post.created_at = self.random_date_between(now - timedelta(days=DATE_RANGE_DAYS), now)
+            post.updated_at = post.created_at
+            if random.random() < EDITED_POST_RATIO:
+                delay = timedelta(days=random.randint(MIN_EDIT_DELAY_DAYS, MAX_EDIT_DELAY_DAYS))
+                post.updated_at = min(post.created_at + delay, now)
+
+        Post.objects.bulk_update(posts, ["created_at", "updated_at"], batch_size=BATCH_SIZE)
+
+    def random_date_between(self, start: datetime, end: datetime) -> datetime:
+        seconds = int((end - start).total_seconds())
+        return start + timedelta(seconds=random.randint(0, seconds))
 
     def build_unique_slug(self, title: str, used_slugs: set[str]) -> str:
         base_slug = slugify(title)
@@ -274,7 +297,16 @@ class Command(BaseCommand):
             )
             for _ in range(count)
         ]
-        return Comment.objects.bulk_create(comments, batch_size=BATCH_SIZE)
+
+        comments = Comment.objects.bulk_create(comments, batch_size=BATCH_SIZE)
+        self.spread_comment_dates(comments)
+        return comments
+
+    def spread_comment_dates(self, comments: list[Comment]) -> None:
+        now = timezone.now()
+        for comment in comments:
+            comment.created_at = self.random_date_between(comment.post.created_at, now)
+        Comment.objects.bulk_update(comments, ["created_at"], batch_size=BATCH_SIZE)
 
     def write_summary(self, label: str, count: int) -> None:
         self.stdout.write(f"{label:<{LABEL_WIDTH}}{count:>{COUNT_WIDTH}} created")
