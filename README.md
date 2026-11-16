@@ -118,6 +118,30 @@ filters, row/list/detail/submit-line actions and a WYSIWYG editor for posts.
 
 ![User list](docs/screenshots/user_list.png)
 
+## Queries
+
+`apps/blog/queries.py` contains 50 Django ORM queries, one function each.
+The `queries` command runs them and shows the result and the number of SQL queries.
+
+| Command                                     | What it does                                          |
+|---------------------------------------------|-------------------------------------------------------|
+| `python manage.py queries`                  | Runs all queries except 40-44 (they change the data)  |
+| `python manage.py queries --number 31`      | Runs only query 31 (works for 40-44 too)              |
+| `python manage.py queries --number 6 --sql` | Also prints the SQL that Django sent to the database  |
+
+Queries 40-44 change the data. Run `python manage.py seed --clear` afterwards to get fresh data.
+
+```
+$ python manage.py queries --number 31
+#31 categories_with_post_count — 1 SQL query
+  Python {'post_count': 17}
+  Django {'post_count': 16}
+  Career {'post_count': 11}
+  Databases {'post_count': 11}
+  Machine Learning {'post_count': 11}
+  (8 rows)
+```
+
 ## Authentication
 
 Login uses email instead of username. JWT tokens:
