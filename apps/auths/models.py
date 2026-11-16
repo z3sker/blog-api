@@ -33,12 +33,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email).lower()
 
-    @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}".strip()
-
     def get_full_name(self) -> str:
-        return self.full_name
+        return f"{self.first_name} {self.last_name}".strip()
 
     def get_short_name(self) -> str:
         return self.first_name
