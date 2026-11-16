@@ -1,10 +1,12 @@
 from collections.abc import Callable
+from datetime import timedelta
 from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import connection
 from django.db.models import Model, QuerySet
 from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 
 from apps.blog.models import Post
 from apps.blog.queries import QUERIES
@@ -12,15 +14,36 @@ from apps.blog.queries import QUERIES
 PREVIEW_ROWS = 5
 DATA_CHANGING_QUERIES = range(40, 45)
 SAMPLE_PAGE = 2
+SAMPLE_WORD = "an"
+SAMPLE_DOMAIN = "example.com"
+SAMPLE_DAYS = 30
+SAMPLE_RANGE_DAYS = 60
+SAMPLE_CATEGORY_SLUGS = ["python", "django", "devops"]
 
 
 def post_slug_arguments() -> dict[str, Any]:
     return {"slug": Post.objects.values_list("slug", flat=True).first()}
 
 
+def current_month_arguments() -> dict[str, Any]:
+    today = timezone.localdate()
+    return {"year": today.year, "month": today.month}
+
+
+def date_range_arguments() -> dict[str, Any]:
+    today = timezone.localdate()
+    return {"start": today - timedelta(days=SAMPLE_RANGE_DAYS), "end": today}
+
+
 QUERY_ARGUMENTS: dict[int, dict[str, Any] | Callable[[], dict[str, Any]]] = {
     4: post_slug_arguments,
     7: {"page": SAMPLE_PAGE},
+    8: {"word": SAMPLE_WORD},
+    9: {"domain": SAMPLE_DOMAIN},
+    11: {"slugs": SAMPLE_CATEGORY_SLUGS},
+    12: current_month_arguments,
+    13: {"days": SAMPLE_DAYS},
+    14: date_range_arguments,
 }
 
 
