@@ -83,7 +83,8 @@ def dashboard_callback(request: HttpRequest, context: dict[str, Any]) -> dict[st
             "top_authors_table": {
                 "headers": ["Author", "Email", "Posts"],
                 "rows": [
-                    [author.full_name, author.email, author.post_count] for author in top_authors
+                    [author.get_full_name(), author.email, author.post_count]
+                    for author in top_authors
                 ],
             },
             "status_progress": [

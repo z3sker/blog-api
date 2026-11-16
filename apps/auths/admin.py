@@ -76,7 +76,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
     @display(description="User", header=True, ordering="email")
     def user_header(self, obj: User) -> tuple[str, str, str]:
         initials = f"{obj.first_name[:1]}{obj.last_name[:1]}"
-        return obj.full_name, obj.email, initials
+        return obj.get_full_name(), obj.email, initials
 
     @display(description="Status", ordering="is_active", label=ACTIVE_LABEL_COLORS)
     def active_label(self, obj: User) -> str:
