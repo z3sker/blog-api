@@ -2,7 +2,8 @@ from collections.abc import Callable
 from datetime import date, timedelta
 from typing import Any
 
-from django.db.models import F, Q, QuerySet
+from django.db.models import F, Q, QuerySet, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.auths.models import User
@@ -12,6 +13,7 @@ NEWEST_POSTS_LIMIT = 5
 PAGE_SIZE = 10
 EMAIL_DOMAIN_PREFIX = "@"
 EDIT_THRESHOLD = timedelta(hours=1)
+UNCATEGORIZED = "Uncategorized"
 
 
 def categories_by_name() -> QuerySet[Category]:
@@ -149,6 +151,27 @@ def comments_before_post() -> QuerySet[Comment]:
     return Comment.objects.filter(created_at__lt=F("post__created_at"))
 
 
+def published_authors_emails() -> list[str]:
+    """Unique emails of authors with published posts, sorted A to Z."""
+    return list(
+        Post.objects.filter(status=Post.Status.PUBLISHED)
+        .values_list("author__email", flat=True)
+        .distinct()
+        .order_by("author__email")
+    )
+
+
+def published_posts_overview() -> list[dict[str, Any]]:
+    """Title, author email and category name of every published post."""
+    return list(
+        Post.objects.filter(status=Post.Status.PUBLISHED).values(
+            "title",
+            author_email=F("author__email"),
+            category_name=Coalesce(F("category__name"), Value(UNCATEGORIZED)),
+        )
+    )
+
+
 QUERIES: dict[int, Callable[..., Any]] = {
     1: categories_by_name,
     2: published_posts,
@@ -176,4 +199,6 @@ QUERIES: dict[int, Callable[..., Any]] = {
     24: edited_posts,
     25: comments_by_post_author,
     26: comments_before_post,
+    27: published_authors_emails,
+    28: published_posts_overview,
 }
