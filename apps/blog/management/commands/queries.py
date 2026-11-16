@@ -2,6 +2,7 @@ from collections.abc import Callable
 from datetime import timedelta
 from typing import Any
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import connection
 from django.db.models import Count, Model, QuerySet
@@ -26,6 +27,9 @@ SAMPLE_TAG_SLUG = "python"
 SAMPLE_SECOND_TAG_SLUG = "django"
 SAMPLE_MIN_POSTS = 10
 NAME_SEARCH_LETTERS = 3
+SAMPLE_TAG_NAME = "Django ORM"
+SAMPLE_MERGE_SOURCE_SLUG = "career"
+SAMPLE_MERGE_TARGET_SLUG = "python"
 
 
 def post_slug_arguments() -> dict[str, Any]:
@@ -86,6 +90,10 @@ QUERY_ARGUMENTS: dict[int, dict[str, Any] | Callable[[], dict[str, Any]]] = {
     22: {"text": SAMPLE_WORD},
     34: {"min_posts": SAMPLE_MIN_POSTS},
     37: full_name_arguments,
+    40: {"name": SAMPLE_TAG_NAME},
+    41: {"days": SAMPLE_DAYS},
+    42: {"category_slug": SAMPLE_CATEGORY_SLUG, "tag_slug": SAMPLE_SECOND_TAG_SLUG},
+    43: {"source_slug": SAMPLE_MERGE_SOURCE_SLUG, "target_slug": SAMPLE_MERGE_TARGET_SLUG},
 }
 
 
@@ -114,13 +122,19 @@ class Command(BaseCommand):
         function = QUERIES[number]
         arguments = self.get_arguments(number)
 
-        with CaptureQueriesContext(connection) as context:
-            result = function(**arguments)
-            if isinstance(result, QuerySet):
-                annotations = list(result.query.annotations)
-                result = list(result)
-            else:
-                annotations = []
+        try:
+            with CaptureQueriesContext(connection) as context:
+                result = function(**arguments)
+                if isinstance(result, QuerySet):
+                    annotations = list(result.query.annotations)
+                    result = list(result)
+                else:
+                    annotations = []
+        except ObjectDoesNotExist as error:
+            raise CommandError(
+                f"#{number} {function.__name__} failed: {error} "
+                "Run 'python manage.py seed --clear' to get fresh data."
+            ) from error
 
         count = len(context.captured_queries)
         word = "query" if count == 1 else "queries"

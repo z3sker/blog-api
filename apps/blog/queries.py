@@ -2,9 +2,11 @@ from collections.abc import Callable
 from datetime import date, timedelta
 from typing import Any
 
+from django.db import transaction
 from django.db.models import Avg, Case, CharField, Count, F, Max, Min, Q, QuerySet, Value, When
 from django.db.models.functions import Coalesce, Concat, TruncMonth
 from django.utils import timezone
+from django.utils.text import slugify
 
 from apps.auths.models import User
 from apps.blog.models import Category, Comment, Post, Tag
@@ -273,6 +275,43 @@ def posts_with_popularity() -> QuerySet[Post]:
     )
 
 
+def get_or_create_tag(name: str) -> tuple[Tag, bool]:
+    """Return the tag with this name, create it if it does not exist."""
+    return Tag.objects.get_or_create(slug=slugify(name), defaults={"name": name})
+
+
+def publish_old_drafts(days: int) -> int:
+    """Publish all drafts older than `days` days with one query."""
+    now = timezone.now()
+    return Post.objects.filter(
+        status=Post.Status.DRAFT, created_at__lt=now - timedelta(days=days)
+    ).update(status=Post.Status.PUBLISHED, updated_at=now)
+
+
+def tag_category_posts(category_slug: str, tag_slug: str) -> int:
+    """Add the tag to every post of the category and return the number of posts."""
+    tag = Tag.objects.get(slug=tag_slug)
+    post_ids = list(Post.objects.filter(category__slug=category_slug).values_list("id", flat=True))
+    tag.post_set.add(*post_ids)
+    return len(post_ids)
+
+
+def merge_categories(source_slug: str, target_slug: str) -> int:
+    """Move all posts of the source category to the target and delete the source."""
+    with transaction.atomic():
+        source = Category.objects.get(slug=source_slug)
+        target = Category.objects.get(slug=target_slug)
+        moved = Post.objects.filter(category=source).update(category=target)
+        source.delete()
+    return moved
+
+
+def delete_inactive_users_comments() -> int:
+    """Delete all comments written by inactive users."""
+    deleted, _ = Comment.objects.filter(author__is_active=False).delete()
+    return deleted
+
+
 QUERIES: dict[int, Callable[..., Any]] = {
     1: categories_by_name,
     2: published_posts,
@@ -313,4 +352,9 @@ QUERIES: dict[int, Callable[..., Any]] = {
     37: search_users_by_full_name,
     38: published_posts_per_month,
     39: posts_with_popularity,
+    40: get_or_create_tag,
+    41: publish_old_drafts,
+    42: tag_category_posts,
+    43: merge_categories,
+    44: delete_inactive_users_comments,
 }
