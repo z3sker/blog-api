@@ -2,8 +2,8 @@ from collections.abc import Callable
 from datetime import date, timedelta
 from typing import Any
 
-from django.db.models import Avg, Count, F, Max, Min, Q, QuerySet, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Avg, Case, CharField, Count, F, Max, Min, Q, QuerySet, Value, When
+from django.db.models.functions import Coalesce, Concat, TruncMonth
 from django.utils import timezone
 
 from apps.auths.models import User
@@ -17,6 +17,12 @@ UNCATEGORIZED = "Uncategorized"
 AVERAGE_PRECISION = 2
 EMPTY_AVERAGE = 0.0
 TOP_AUTHORS_LIMIT = 5
+FULL_NAME_SEPARATOR = " "
+HOT_MIN_COMMENTS = 10
+NORMAL_MIN_COMMENTS = 3
+POPULARITY_HOT = "hot"
+POPULARITY_NORMAL = "normal"
+POPULARITY_QUIET = "quiet"
 
 
 def categories_by_name() -> QuerySet[Category]:
@@ -237,6 +243,36 @@ def users_activity() -> QuerySet[User]:
     ).order_by("email")
 
 
+def search_users_by_full_name(text: str) -> QuerySet[User]:
+    """Users whose full name contains the text, ignoring letter case."""
+    return User.objects.annotate(
+        full_name=Concat("first_name", Value(FULL_NAME_SEPARATOR), "last_name")
+    ).filter(full_name__icontains=text)
+
+
+def published_posts_per_month() -> list[dict[str, Any]]:
+    """Number of published posts in each month, oldest month first."""
+    return list(
+        Post.objects.filter(status=Post.Status.PUBLISHED)
+        .annotate(month=TruncMonth("created_at"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
+
+
+def posts_with_popularity() -> QuerySet[Post]:
+    """Every post with comment_count and popularity: hot, normal or quiet."""
+    return Post.objects.annotate(comment_count=Count("comment")).annotate(
+        popularity=Case(
+            When(comment_count__gte=HOT_MIN_COMMENTS, then=Value(POPULARITY_HOT)),
+            When(comment_count__gte=NORMAL_MIN_COMMENTS, then=Value(POPULARITY_NORMAL)),
+            default=Value(POPULARITY_QUIET),
+            output_field=CharField(),
+        )
+    )
+
+
 QUERIES: dict[int, Callable[..., Any]] = {
     1: categories_by_name,
     2: published_posts,
@@ -274,4 +310,7 @@ QUERIES: dict[int, Callable[..., Any]] = {
     34: popular_tags,
     35: posts_per_status,
     36: users_activity,
+    37: search_users_by_full_name,
+    38: published_posts_per_month,
+    39: posts_with_popularity,
 }

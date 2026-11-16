@@ -25,6 +25,7 @@ SAMPLE_CATEGORY_SLUG = "python"
 SAMPLE_TAG_SLUG = "python"
 SAMPLE_SECOND_TAG_SLUG = "django"
 SAMPLE_MIN_POSTS = 10
+NAME_SEARCH_LETTERS = 3
 
 
 def post_slug_arguments() -> dict[str, Any]:
@@ -62,6 +63,13 @@ def tag_pair_arguments() -> dict[str, Any]:
     return {"first_slug": first_slug, "second_slug": second_slug}
 
 
+def full_name_arguments() -> dict[str, Any]:
+    user = User.objects.first()
+    if user is None:
+        return {"text": SAMPLE_WORD}
+    return {"text": f"{user.first_name} {user.last_name[:NAME_SEARCH_LETTERS]}".lower()}
+
+
 QUERY_ARGUMENTS: dict[int, dict[str, Any] | Callable[[], dict[str, Any]]] = {
     4: post_slug_arguments,
     7: {"page": SAMPLE_PAGE},
@@ -77,6 +85,7 @@ QUERY_ARGUMENTS: dict[int, dict[str, Any] | Callable[[], dict[str, Any]]] = {
     21: tag_pair_arguments,
     22: {"text": SAMPLE_WORD},
     34: {"min_posts": SAMPLE_MIN_POSTS},
+    37: full_name_arguments,
 }
 
 
